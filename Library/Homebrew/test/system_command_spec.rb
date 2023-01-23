@@ -196,7 +196,7 @@ describe SystemCommand do
       ] }
     }
 
-    it "returns without deadlocking" do
+    it "returns without deadlocking" do # rubocop:disable RSpec/NoExpectationExample
       wait(30).for {
         described_class.run(command, **options)
       }.to be_a_success

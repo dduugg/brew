@@ -268,7 +268,7 @@ describe Keg do
       expect(lib.children.length).to eq(2)
     end
 
-    it "removes broken symlinks that conflict with directories" do
+    it "removes broken symlinks that conflict with directories" do # rubocop:disable RSpec/NoExpectationExample
       a = HOMEBREW_CELLAR/"a"/"1.0"
       (a/"lib"/"foo").mkpath
 

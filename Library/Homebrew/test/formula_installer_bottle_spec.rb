@@ -67,7 +67,7 @@ describe FormulaInstaller do
     expect(f.libexec).to be_a_directory
   end
 
-  specify "basic bottle install" do
+  specify "basic bottle install" do # rubocop:disable RSpec/NoExpectationExample
     allow(DevelopmentTools).to receive(:installed?).and_return(false)
     Homebrew.install_args.parse(["testball_bottle"])
     temporarily_install_bottle(TestballBottle.new) do |f|
