@@ -89,9 +89,9 @@ describe "Exception" do
 
     let(:mod) do
       Module.new do
-        class Bar < Requirement; end
+        class Bar < Requirement; end # rubocop:disable RSpec/LeakyConstantDeclaration
 
-        class Baz < Formula; end
+        class Baz < Formula; end # rubocop:disable RSpec/LeakyConstantDeclaration
       end
     end
 
