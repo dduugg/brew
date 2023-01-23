@@ -5,8 +5,6 @@ RSpec/AnyInstance:
   Enabled: false
 RSpec/FilePath:
   Enabled: false
-RSpec/ImplicitBlockExpectation:
-  Enabled: false
 RSpec/SubjectStub:
   Enabled: false
 
