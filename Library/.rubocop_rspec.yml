@@ -15,8 +15,6 @@ RSpec/DescribeClass:
   Enabled: false
 RSpec/MessageSpies:
   Enabled: false
-RSpec/RepeatedDescription:
-  Enabled: false
 RSpec/StubbedMock:
   Enabled: false
 RSpec/NoExpectationExample:
