@@ -18,9 +18,9 @@ RSpec/StubbedMock:
 
 # TODO: try to reduce these
 RSpec/ExampleLength:
-  Max: 75
+  Max: 50
 RSpec/MultipleExpectations:
-  Max: 26
+  Max: 17
 RSpec/NestedGroups:
   Max: 5
 RSpec/MultipleMemoizedHelpers:
