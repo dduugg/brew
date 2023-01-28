@@ -72,7 +72,8 @@ module Homebrew
 
         if args.suggest_typed?
           ohai "Bumping Sorbet `typed` sigils..."
-          safe_system "bundle", "exec", "spoom", "bump"
+          safe_system "bundle", "exec", "srb", "typecheck", "--suggest-typed", "--typed=strict",
+            "--isolate-error-code=7022", "--autocorrect"
         end
 
         return
