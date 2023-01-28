@@ -15,7 +15,6 @@ permissions:
 
 jobs:
   tapioca:
-    if: github.repository == 'Homebrew/brew'
     runs-on: macos-12
     steps:
       - name: Checkout
