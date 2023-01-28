@@ -1,3 +1,4 @@
+# typed: false
 cask "sha256-arch" do
   arch arm: "arm", intel: "intel"
 

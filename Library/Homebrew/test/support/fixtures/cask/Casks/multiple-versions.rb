@@ -1,3 +1,4 @@
+# typed: false
 cask "multiple-versions" do
   arch arm: "arm", intel: "intel"
   platform = on_arch_conditional arm: "darwin-arm64", intel: "darwin"

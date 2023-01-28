@@ -1,3 +1,4 @@
+# typed: false
 cask "version-latest-reference" do
   version :latest
   sha256 :no_check
