@@ -32,6 +32,9 @@ jobs:
         with:
           username: BrewTestBot
 
+      - name: Install Bundler RubyGems
+        run: brew install-bundler-gems --groups=sorbet
+
       # - name: Set up commit signing
       #   uses: Homebrew/actions/setup-commit-signing@master
       #   with:
