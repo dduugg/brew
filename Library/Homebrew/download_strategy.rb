@@ -12,7 +12,6 @@ require "mechanize/version"
 require "mechanize/http/content_disposition_parser"
 
 require "utils/curl"
-require "utils/github"
 
 require "github_packages"
 
@@ -1077,13 +1076,43 @@ class GitHubGitDownloadStrategy < GitDownloadStrategy
     @repo = repo
   end
 
+  def github_last_commit
+    # TODO: move to Utils::GitHub
+    return if Homebrew::EnvConfig.no_github_api?
+
+    output, _, status = curl_output(
+      "--silent", "--head", "--location",
+      "-H", "Accept: application/vnd.github.sha",
+      "https://api.github.com/repos/#{@user}/#{@repo}/commits/#{@ref}"
+    )
+
+    return unless status.success?
+
+    commit = output[/^ETag: "(\h+)"/, 1]
+    version.update_commit(commit) if commit
+    commit
+  end
+
+  def multiple_short_commits_exist?(commit)
+    # TODO: move to Utils::GitHub
+    return if Homebrew::EnvConfig.no_github_api?
+
+    output, _, status = curl_output(
+      "--silent", "--head", "--location",
+      "-H", "Accept: application/vnd.github.sha",
+      "https://api.github.com/repos/#{@user}/#{@repo}/commits/#{commit}"
+    )
+
+    !(status.success? && output && output[/^Status: (200)/, 1] == "200")
+  end
+
   def commit_outdated?(commit)
-    @last_commit ||= GitHub.last_commit(@user, @repo, @ref)
+    @last_commit ||= github_last_commit
     if @last_commit
       return true unless commit
       return true unless @last_commit.start_with?(commit)
 
-      if GitHub.multiple_short_commits_exist?(@user, @repo, commit)
+      if multiple_short_commits_exist?(commit)
         true
       else
         version.update_commit(commit)

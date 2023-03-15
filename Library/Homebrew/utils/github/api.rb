@@ -3,7 +3,6 @@
 
 require "tempfile"
 require "utils/shell"
-require "utils/formatter"
 
 # A module that interfaces with GitHub, code like PAT scopes, credential handling and API errors.
 module GitHub
