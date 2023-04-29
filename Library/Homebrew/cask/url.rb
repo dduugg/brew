@@ -77,17 +77,16 @@ module Cask
     # @api private
     class BlockDSL
       # To access URL associated with page contents.
-      module PageWithURL
-        # @api public
-        sig { returns(URI::Generic) }
-        attr_accessor :url
+      class PageWithURL < T::Struct
+        const :page, String
+        const :url, URI::Generic
       end
 
       sig {
         params(
           uri:   T.nilable(T.any(URI::Generic, String)),
           dsl:   T.nilable(::Cask::DSL),
-          block: T.proc.params(arg0: T.all(String, PageWithURL)).returns(T.untyped),
+          block: T.proc.params(arg0: PageWithURL).returns(T.untyped),
         ).void
       }
       def initialize(uri, dsl: nil, &block)
@@ -101,11 +100,7 @@ module Cask
         if @uri
           result = curl_output("--fail", "--silent", "--location", @uri)
           result.assert_success!
-
-          page = T.cast(result.stdout, T.all(String, PageWithURL))
-          page.extend PageWithURL
-          page.url = URI(@uri)
-
+          page = PageWithURL.new(page: result.stdout, url: URI(@uri))
           instance_exec(page, &@block)
         else
           instance_exec(&@block)
@@ -116,7 +111,7 @@ module Cask
       sig {
         params(
           uri:   T.any(URI::Generic, String),
-          block: T.proc.params(arg0: T.all(String, PageWithURL)).returns(T.untyped),
+          block: T.proc.params(arg0: PageWithURL).returns(T.untyped),
         ).void
       }
       def url(uri, &block)
@@ -156,7 +151,7 @@ module Cask
         only_path:       T.nilable(String),
         caller_location: Thread::Backtrace::Location,
         dsl:             T.nilable(::Cask::DSL),
-        block:           T.nilable(T.proc.params(arg0: T.all(String, BlockDSL::PageWithURL)).returns(T.untyped)),
+        block:           T.nilable(T.proc.params(arg0: BlockDSL::PageWithURL).returns(T.untyped)),
       ).void
     }
     def initialize(
