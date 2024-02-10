@@ -66,11 +66,6 @@ group :typecheck, optional: true do
   gem "tapioca", require: false
 end
 
-# shared gems (used by multiple groups)
-group :audit, :bump_unversioned_casks, :livecheck, optional: true do
-  gem "rexml", require: false
-end
-
 # vendored gems (no group)
 gem "addressable"
 gem "patchelf"
