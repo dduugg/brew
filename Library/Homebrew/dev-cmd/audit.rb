@@ -167,8 +167,7 @@ module Homebrew
       return
     end
 
-    gem_groups = ["audit"]
-    gem_groups << "style" unless skip_style
+    gem_groups = skip_style ? [] : ["style"]
     Homebrew.install_bundler_gems!(groups: gem_groups)
 
     style_files = args.named.to_paths unless skip_style
