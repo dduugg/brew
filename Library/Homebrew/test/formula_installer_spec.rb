@@ -105,6 +105,8 @@ describe FormulaInstaller do
 
       byebug
 
+      1/0
+
       formula1_name = "homebrew-test-formula1"
       formula2_name = "homebrew-test-formula2"
       formula1_path = CoreTap.new.new_formula_path(formula1_name)
