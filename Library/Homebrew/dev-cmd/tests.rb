@@ -125,7 +125,7 @@ module Homebrew
         end
       end
 
-      parallel = false if args.profile
+      parallel = false if args.profile || args.byebug?
 
       parallel_rspec_log_name = "parallel_runtime_rspec"
       parallel_rspec_log_name = "#{parallel_rspec_log_name}.generic" if args.generic?
