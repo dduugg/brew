@@ -24,20 +24,20 @@ module Homebrew
 
         # Can set these because they will be overwritten by freeze_named_args!
         # (whereas other values below will only be overwritten if passed).
-        self[:named] = NamedArgs.new(parent: self)
-        self[:remaining] = []
+        @table[:named] = NamedArgs.new(parent: self)
+        @table[:remaining] = []
       end
 
       def freeze_remaining_args!(remaining_args)
-        self[:remaining] = remaining_args.freeze
+        @table[:remaining] = remaining_args.freeze
       end
 
       def freeze_named_args!(named_args, cask_options:, without_api:)
         options = {}
-        options[:force_bottle] = true if self[:force_bottle?]
-        options[:override_spec] = :head if self[:HEAD?]
+        options[:force_bottle] = true if @table[:force_bottle?]
+        options[:override_spec] = :head if @table[:HEAD?]
         options[:flags] = flags_only unless flags_only.empty?
-        self[:named] = NamedArgs.new(
+        @table[:named] = NamedArgs.new(
           *named_args.freeze,
           parent:       self,
           cask_options:,
@@ -60,7 +60,7 @@ module Homebrew
       sig { returns(NamedArgs) }
       def named
         require "formula"
-        self[:named]
+        @table[:named]
       end
 
       def no_named?
@@ -68,7 +68,7 @@ module Homebrew
       end
 
       def build_from_source_formulae
-        if build_from_source? || self[:HEAD?] || self[:build_bottle?]
+        if build_from_source? || @table[:HEAD?] || @table[:build_bottle?]
           named.to_formulae.map(&:full_name)
         else
           []
@@ -139,7 +139,21 @@ module Homebrew
         end
       end
 
+      def [](name)
+        return_value = super
+        check_declared!(name)
+        return_value
+      end
+
       private
+
+      def check_declared!(method_name, args = [])
+        # Once we are frozen, verify any arg method calls are already defined in the table.
+        # The default OpenStruct behaviour is to return nil for anything unknown.
+        return if !frozen? || !args.empty? || @table.key?(method_name)
+
+        raise NoMethodError, "CLI arg for `#{method_name}` is not declared for this command"
+      end
 
       def option_to_name(option)
         option.sub(/\A--?/, "")
@@ -171,13 +185,7 @@ module Homebrew
 
       def method_missing(method_name, *args)
         return_value = super
-
-        # Once we are frozen, verify any arg method calls are already defined in the table.
-        # The default OpenStruct behaviour is to return nil for anything unknown.
-        if frozen? && args.empty? && !@table.key?(method_name)
-          raise NoMethodError, "CLI arg for `#{method_name}` is not declared for this command"
-        end
-
+        check_declared!(method_name, args)
         return_value
       end
     end

@@ -6,6 +6,7 @@ module Homebrew
   # module, because:
   # - Each Command lives in an isolated namespace.
   # - Each Command implements a defined interface.
+  # - Command args are available as an instance variable, and don't need to be passed as method arguments.
   #
   # To subclass, implement a `run` method and provide a `cmd_args` block to document the command and its allowed args.
   class AbstractCommand
