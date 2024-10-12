@@ -42,6 +42,7 @@ group :prof, optional: true do
 end
 group :pry, optional: true do
   gem "pry", require: false
+  # gem "pry-byebug"
 end
 group :style, optional: true do
   gem "rubocop", require: false
