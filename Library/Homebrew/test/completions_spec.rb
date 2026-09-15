@@ -381,6 +381,16 @@ RSpec.describe Homebrew::Completions do
         expect(completion).to include("__brew_complete_services")
         expect(completion).to include("        *) ;;\n      esac\n      ;;")
       end
+
+      it "excludes a flag once a conflicting flag has already been given" do
+        allow(Commands).to receive(:option_conflicts).and_call_original
+        allow(Commands).to receive(:option_conflicts).with("missing", "hide").and_return(["quiet"])
+
+        completion = described_class.generate_bash_subcommand_completion("missing")
+
+        expect(completion).to include("__brewcomp_exclusive")
+        expect(completion).to include("--hide\t--quiet")
+      end
     end
 
     describe ".generate_bash_completion_file" do
@@ -613,6 +623,30 @@ RSpec.describe Homebrew::Completions do
                                       "-l all -d 'List all test services'")
         expect(completion).to include("__fish_brew_complete_sub_arg 'subcommand-test' 'info i' " \
                                       "-a '(__fish_brew_suggest_services)'")
+      end
+
+      it "excludes a flag once a conflicting flag has already been given" do
+        allow(Commands).to receive(:option_conflicts).and_call_original
+        allow(Commands).to receive(:option_conflicts).with("missing", "hide").and_return(["quiet"])
+
+        completion = described_class.generate_fish_subcommand_completion("missing")
+
+        expect(completion).to include(
+          "__fish_brew_complete_arg 'missing; and not __fish_seen_argument -l quiet' -l hide",
+        )
+      end
+
+      it "excludes a flag on a subcommand once a conflicting flag has already been given" do
+        stub_nested_completion_command(nested_completion_command, nested_completion_subcommands)
+        allow(Commands).to receive(:option_conflicts).and_call_original
+        allow(Commands).to receive(:option_conflicts).with(nested_completion_command, "all").and_return(["global"])
+
+        completion = described_class.generate_fish_subcommand_completion(nested_completion_command)
+
+        expect(completion).to include(
+          "__fish_brew_complete_arg 'subcommand-test; and __fish_brew_subcommand subcommand-test list ls; " \
+          "and not __fish_seen_argument -l global' -l all",
+        )
       end
 
       it "maintainer-gates command completions but keeps argument completions for commands hidden from the manpage" do

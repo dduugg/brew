@@ -211,18 +211,36 @@ module Homebrew
       named_completion_string
     end
 
+    sig { params(command: String, options: T::Hash[String, String], indent: String).returns(String) }
+    def self.generate_bash_option_completion(command, options, indent: "")
+      options.keys.sort.map do |opt|
+        conflicts = Commands.option_conflicts(command, opt.sub(/^-+/, ""))
+        next opt if conflicts.blank?
+
+        conflict_flags = conflicts.map { |conflict| "-#{"-" if conflict.size > 1}#{conflict}" }.join(",")
+        "#{opt}\t#{conflict_flags}"
+      end.join("\n#{indent}")
+    end
+
+    sig { params(options: String).returns(String) }
+    def self.bash_completion_function(options)
+      options.include?("\t") ? "__brewcomp_exclusive" : "__brewcomp"
+    end
+
     sig { params(command: String, subcommands: T::Array[Homebrew::CLI::Parser::Subcommand]).returns(String) }
     def self.generate_bash_nested_subcommand_completion(command, subcommands)
-      top_level_options = command_options(command).keys.sort.join("\n          ")
+      top_level_options = generate_bash_option_completion(command, command_options(command), indent: " " * 10)
       subcommand_names = subcommand_completion_names(subcommands).join(" ")
       subcommand_cases = subcommands.map do |subcommand|
         "      #{([subcommand.name] + subcommand.aliases).join("|")}) subcommand=\"#{subcommand.name}\"; break ;;"
       end.join("\n")
       option_cases = subcommands.map do |subcommand|
-        options = command_options(command, subcommand: subcommand.name).keys.sort.join("\n        ")
+        options = generate_bash_option_completion(
+          command, command_options(command, subcommand: subcommand.name), indent: " " * 8
+        )
         <<~EOS
           #{subcommand.name})
-                  __brewcomp "
+                  #{bash_completion_function(options)} "
                   #{options}
                   "
                   return
@@ -257,7 +275,7 @@ module Homebrew
             -*)
               case "${subcommand}" in
                 "")
-                  __brewcomp "
+                  #{bash_completion_function(top_level_options)} "
                   #{top_level_options}
                   "
                   return
@@ -287,14 +305,15 @@ module Homebrew
       return generate_bash_nested_subcommand_completion(command, subcommands) if subcommands.present?
 
       named_completion_string = generate_bash_named_args_completion(Commands.named_args_type(command))
+      options = generate_bash_option_completion(command, command_options(command), indent: " " * 6)
 
       <<~COMPLETION
         _brew_#{Commands.method_name command}() {
           local cur="${COMP_WORDS[COMP_CWORD]}"
           case "${cur}" in
             -*)
-              __brewcomp "
-              #{command_options(command).keys.sort.join("\n      ")}
+              #{bash_completion_function(options)} "
+              #{options}
               "
               return
               ;;
@@ -508,6 +527,14 @@ module Homebrew
       ERB.new((TEMPLATE_DIR/"zsh.erb").read, trim_mode: ">").result(variables.instance_eval { binding })
     end
 
+    sig { params(command: String, opt: String).returns(String) }
+    def self.generate_fish_option_exclusion(command, opt)
+      conflicts = Commands.option_conflicts(command, opt.sub(/^-+/, ""))
+      return "" if conflicts.blank?
+
+      "; and not __fish_seen_argument #{conflicts.map { |conflict| "-l #{conflict}" }.join(" ")}"
+    end
+
     sig { params(command: String).returns(T.nilable(String)) }
     def self.generate_fish_subcommand_completion(command)
       command_description = format_description Commands.command_description(command, short: true).to_s, fish: true
@@ -526,7 +553,8 @@ module Homebrew
       return generate_fish_nested_subcommand_completion(command, subcommands) if subcommands.present?
 
       options = command_options(command).sort.filter_map do |opt, desc|
-        arg_line = "__fish_brew_complete_arg '#{command}' -l #{opt.sub(/^-+/, "")}"
+        exclusion = generate_fish_option_exclusion(command, opt)
+        arg_line = "__fish_brew_complete_arg '#{command}#{exclusion}' -l #{opt.sub(/^-+/, "")}"
         arg_line += " -d '#{format_description desc, fish: true}'" if desc.present?
         arg_line
       end
@@ -625,7 +653,8 @@ module Homebrew
       end
 
       lines += command_options(command).sort.filter_map do |opt, desc|
-        arg_line = "__fish_brew_complete_arg '#{command}; and [ (count (__fish_brew_args)) = 1 ]' " \
+        exclusion = generate_fish_option_exclusion(command, opt)
+        arg_line = "__fish_brew_complete_arg '#{command}; and [ (count (__fish_brew_args)) = 1 ]#{exclusion}' " \
                    "-l #{opt.sub(/^-+/, "")}"
         arg_line += " -d '#{format_description desc, fish: true}'" if desc.present?
         arg_line
@@ -634,8 +663,14 @@ module Homebrew
       subcommands.each do |subcommand|
         subcommand_names = ([subcommand.name] + subcommand.aliases).join(" ")
         lines += command_options(command, subcommand: subcommand.name).sort.filter_map do |opt, desc|
-          arg_line = "__fish_brew_complete_sub_arg '#{command}' '#{subcommand_names}' " \
-                     "-l #{opt.sub(/^-+/, "")}"
+          opt_name = opt.sub(/^-+/, "")
+          exclusion = generate_fish_option_exclusion(command, opt)
+          arg_line = if exclusion.present?
+            "__fish_brew_complete_arg '#{command}; and __fish_brew_subcommand #{command} " \
+              "#{subcommand_names}#{exclusion}' -l #{opt_name}"
+          else
+            "__fish_brew_complete_sub_arg '#{command}' '#{subcommand_names}' -l #{opt_name}"
+          end
           arg_line += " -d '#{format_description desc, fish: true}'" if desc.present?
           arg_line
         end

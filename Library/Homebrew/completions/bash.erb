@@ -59,6 +59,31 @@ __brewcomp() {
   done < <(__brewcomp_words "$1")
 }
 
+# Like __brewcomp(), but each line may be "flag<TAB>conflicting_flag1,conflicting_flag2"
+# to also exclude a flag once any of its listed conflicts has already been given.
+__brewcomp_exclusive() {
+  local line word conflicts conflict matched
+  while IFS= read -r line
+  do
+    [[ -z ${line} ]] && continue
+    word=${line%%$'\t'*}
+    conflicts=""
+    [[ ${word} != "${line}" ]] && conflicts=${line#*$'\t'}
+    __brewcomp_words_include "${word}" && continue
+    matched=false
+    if [[ -n ${conflicts} ]]
+    then
+      local -a conflict_list
+      IFS=',' read -r -a conflict_list <<< "${conflicts}"
+      for conflict in "${conflict_list[@]}"
+      do
+        __brewcomp_words_include "${conflict}" && matched=true && break
+      done
+    fi
+    [[ ${matched} == true ]] || __brewcomp_lines "${word}"
+  done <<< "$1"
+}
+
 # Don't use __brewcomp() in any of the __brew_complete_foo functions, as
 # it is too slow and is not worth it just for duplicate elimination.
 __brew_complete_formulae() {
